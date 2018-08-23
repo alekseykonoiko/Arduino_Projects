@@ -72,67 +72,67 @@ static unsigned char u8g_logo_bits[] U8G_PROGMEM = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 
 };
 
-int divVoltagePin = A0;    // select the input pin for the potentiometer
-int divVoltageValue = 0;  // variable to store the value coming from the sensor
+int divVoltagePin = A0;  // select the input pin for the potentiometer
+int divVoltageValue = 0; // variable to store the value coming from the sensor
 
-int pot1 = A1;    // select the input pin for the potentiometer for pulse 1
-int pot2 = A2;    // select the input pin for the potentiometer for the dwell
-int pot3 = A3;    // select the input pin for the potentiometer for pulse 2
+int pot1 = A1; // select the input pin for the potentiometer for pulse 1
+int pot2 = A2; // select the input pin for the potentiometer for the dwell
+int pot3 = A3; // select the input pin for the potentiometer for pulse 2
 
-int pulse1Value = 0;  // variable to hold the potentiometer value
+int pulse1Value = 0; // variable to hold the potentiometer value
 int dwellValue = 0;  // variable to hold the potentiometer value
-int pulse2Value = 0;  // variable to hold the potentiometer value
+int pulse2Value = 0; // variable to hold the potentiometer value
 
-const int buttonPin = 4;     // the number of the pushbutton pin
+const int buttonPin = 4; // the number of the pushbutton pin
 const int buzz = 5;
 int comp = 2;
 int comp_state;
 int solenoid = 3;
 
-const int numReadings = 10;  // use this value to determine the size of the readings array.
-int voltageReadings[numReadings];      // the readings from the analog input
-int voltageReadIndex = 0;              // the index of the current reading
-float voltageTotal = 0;                  // the running total
-float voltageAverage = 0.0;            // the average
-float voltageAverageOld = 0.0;          // the old voltage average reading
+const int numReadings = 10;       // use this value to determine the size of the readings array.
+int voltageReadings[numReadings]; // the readings from the analog input
+int voltageReadIndex = 0;         // the index of the current reading
+float voltageTotal = 0;           // the running total
+float voltageAverage = 0.0;       // the average
+float voltageAverageOld = 0.0;    // the old voltage average reading
 
-boolean voltageSteady = false;    //boolean to monitor whether the voltage is fluctuating - a weld can only be performed when the voltage is stable
+boolean voltageSteady = false; //boolean to monitor whether the voltage is fluctuating - a weld can only be performed when the voltage is stable
 
 const int gatePin = 6; // the number of the gate trigger pulse
 
 int weldComplete = 1;
-int buttonState = 0;         // variable for reading the pushbutton status
+int buttonState = 0; // variable for reading the pushbutton status
 
-char* statusText[2] = {"Stabalising volts", "*Ready to weld*"};  // text for the screen to indicate readiness for welding
-int  statusTextNum = 0;
+char *statusText[2] = {"Stabalising volts", "*Ready to weld*"}; // text for the screen to indicate readiness for welding
+int statusTextNum = 0;
 
+void draw(void)
+{
+  // graphic commands to redraw the complete screen should be placed here
 
-
-void draw(void) {
-  // graphic commands to redraw the complete screen should be placed here  
-
-  u8g.setPrintPos(0, 10); 
-  u8g.print("Pulse 1 ="); 
-  u8g.setPrintPos(80, 10); 
+  u8g.setPrintPos(0, 10);
+  u8g.print("Pulse 1 =");
+  u8g.setPrintPos(80, 10);
   u8g.print(pulse1Value);
-  u8g.setPrintPos(0, 23); 
-  u8g.print("Dwell   = "); 
-  u8g.setPrintPos(80, 23); 
-  u8g.print(dwellValue/10.0);
-  u8g.setPrintPos(0, 36); 
-  u8g.print("Pulse 2 ="); 
-  u8g.setPrintPos(80, 36); 
+  u8g.setPrintPos(0, 23);
+  u8g.print("Dwell   = ");
+  u8g.setPrintPos(80, 23);
+  u8g.print(dwellValue);
+  u8g.setPrintPos(0, 36);
+  u8g.print("Pulse 2 =");
+  u8g.setPrintPos(80, 36);
   u8g.print(pulse2Value);
   u8g.setPrintPos(0, 49);
-  u8g.print("Cap Volts ="); 
+  u8g.print("Cap V =");
   u8g.setPrintPos(90, 49);
-  float voltage = voltageAverage * (5.0/1023.0) * 3.0 +.05; // Calculate the voltage across the divider, the +0.05 is the difference between my reading on a DMM and the arduino - not a bad corralation
+  float voltage = voltageAverage * (5.0 / 1023.0) * 3.0 + .05; // Calculate the voltage across the divider, the +0.05 is the difference between my reading on a DMM and the arduino - not a bad corralation
   u8g.print(voltage);
   u8g.setPrintPos(0, 62);
   u8g.print(statusText[statusTextNum]);
 }
 
-void setup(void) {
+void setup(void)
+{
 
   Serial.begin(115200);
   // flip screen, if required
@@ -144,69 +144,76 @@ void setup(void) {
   pinMode(solenoid, OUTPUT);
   pinMode(buzz, OUTPUT);
   pinMode(comp, INPUT);
-    u8g.firstPage();
-  do { 
-  u8g.drawXBMP( 15, 11, u8g_logo_width, u8g_logo_height, u8g_logo_bits);
-  u8g.setFont(u8g_font_unifont);
-  //u8g.setFont(u8g_font_osb21);
-  u8g.drawStr( 0, 10, "Aleksey CD Welder");
-   } while( u8g.nextPage() );
+  u8g.firstPage();
+  do
+  {
+    u8g.drawXBMP(15, 11, u8g_logo_width, u8g_logo_height, u8g_logo_bits);
+    u8g.setFont(u8g_font_unifont);
+    //u8g.setFont(u8g_font_osb21);
+    u8g.drawStr(0, 10, "Aleksey CD Welder");
+  } while (u8g.nextPage());
 
-  delay (2000);
-    // initialize all the readings to 0:
-  for (int thisReading = 0; thisReading < numReadings; thisReading++) {
+  delay(2000);
+  // initialize all the readings to 0:
+  for (int thisReading = 0; thisReading < numReadings; thisReading++)
+  {
     voltageReadings[thisReading] = 0;
   }
-  
 }
 
-void weldschedule() {
+void weldschedule()
+{
 
   digitalWrite(gatePin, HIGH);
-  delay (pulse1Value);
+  delay(pulse1Value);
   digitalWrite(gatePin, LOW);
-  delay (dwellValue/10);
+  delay(dwellValue);
   digitalWrite(gatePin, HIGH);
-  delay (pulse2Value);
+  delay(pulse2Value);
   digitalWrite(gatePin, LOW);
   weldComplete = 1;
   digitalWrite(buzz, HIGH);
-  delay (200);
+  delay(200);
   digitalWrite(buzz, LOW);
-  
 }
 
-void loop(void) {
-  
+void loop(void)
+{
+
   // picture loop
-  u8g.firstPage();  
-  do {
+  u8g.firstPage();
+  do
+  {
     draw();
-  } while( u8g.nextPage() );
-  
-  pulse1Value = analogRead(pot1);
-  dwellValue = analogRead(pot2);
-  pulse2Value = analogRead(pot3);
+  } while (u8g.nextPage());
+
+  pulse1Value = analogRead(pot1)/5;
+  dwellValue = analogRead(pot2)/10;
+  pulse2Value = analogRead(pot3)/5;
   comp_state = digitalRead(comp);
- // if (comp_state == LOW)
-     //{
-//       delay(2000);
-//       digitalWrite(solenoid, HIGH);
-//       while(comp_state == LOW)
-//       {
-//        
-//       }
-        if(comp_state == HIGH && weldComplete == 0 && voltageSteady == true)
-        {
-        weldschedule();
-        delay(50);
-        }
-       
-       //digitalWrite(solenoid, HIGH);
-       //delay(500);
-       //digitalWrite(solenoid, LOW);
-     //}
-      
+  // if (comp_state == LOW)
+  //{
+  //       delay(2000);
+  //       digitalWrite(solenoid, HIGH);
+  //       while(comp_state == LOW)
+  //       {
+  //
+  //       }
+  //  && weldComplete == 0 && voltageSteady == true
+  if (comp_state ==  LOW && weldComplete == 0 && voltageSteady == true && buttonState == LOW)
+  {
+    digitalWrite(solenoid, HIGH);
+    weldschedule();
+    delay(50);
+    digitalWrite(solenoid, LOW);
+  }
+
+
+  //digitalWrite(solenoid, HIGH);
+  //delay(200);
+  //digitalWrite(solenoid, LOW);
+  //}
+
   // read the voltage from the voltage divider
   // subtract the last reading:
   voltageTotal = voltageTotal - voltageReadings[voltageReadIndex];
@@ -218,7 +225,8 @@ void loop(void) {
   voltageReadIndex = voltageReadIndex + 1;
 
   // if we're at the end of the array...
-  if (voltageReadIndex >= numReadings) {
+  if (voltageReadIndex >= numReadings)
+  {
     // ...wrap around to the beginning:
     voltageReadIndex = 0;
   }
@@ -226,32 +234,37 @@ void loop(void) {
   // calculate the average:
   voltageAverage = voltageTotal / numReadings;
   float voltageDiff = voltageAverageOld - voltageAverage;
-  Serial.println (voltageDiff);
-  Serial.println ("");
-  if (voltageDiff <= 0.5 && voltageDiff >= -0.5 && weldComplete == 1) {
-  weldComplete = 0; 
-  voltageSteady = true;
-  for (int i= 1 ;i < 4; i ++){
-    tone(5, 3000);
-    delay(50);
-    noTone(5);
-    delay(50);
-    statusTextNum = 1;
-   }
- }
- 
- if (voltageDiff >= 0.5 || voltageDiff <= -0.5){
+  Serial.println(voltageDiff);
+  Serial.print("Voltage: ");
+  Serial.println(voltageAverage);
+  Serial.println("");
+  if (voltageDiff <= 0.5 && voltageDiff >= -0.5 && weldComplete == 1)
+  {
+    weldComplete = 0;
+    voltageSteady = true;
+    for (int i = 1; i < 4; i++)
+    {
+      tone(5, 3000);
+      delay(50);
+      noTone(5);
+      delay(50);
+      statusTextNum = 1;
+    }
+  }
 
-  voltageSteady = false;
-  weldComplete = 1;
-  statusTextNum = 0;
- }
+  if (voltageDiff >= 0.5 || voltageDiff <= -0.5)
+  {
+
+    voltageSteady = false;
+    weldComplete = 1;
+    statusTextNum = 0;
+  }
   Serial.println(voltageAverageOld);
   Serial.println(voltageAverage);
   voltageAverageOld = voltageAverage;
-  pulse1Value = map(pulse1Value, 0 , 1023, 0, 1000);      // re-map pot 1 to 0 - XX pulse length
-  dwellValue = map(dwellValue, 0 , 1023, 0, 200);      // re-map pot 1 to 0 - XX pulse length
-  pulse2Value = map(pulse2Value, 0 , 1023, 0, 1000);      // re-map pot 1 to 0 - XX pulse length
+  pulse1Value = map(pulse1Value, 0, 1023, 0, 1000); // re-map pot 1 to 0 - XX pulse length
+  dwellValue = map(dwellValue, 0, 1023, 0, 200);    // re-map pot 1 to 0 - XX pulse length
+  pulse2Value = map(pulse2Value, 0, 1023, 0, 1000); // re-map pot 1 to 0 - XX pulse length
 
   // read the state of the pushbutton value:
   buttonState = digitalRead(buttonPin);
@@ -261,13 +274,14 @@ void loop(void) {
   //Serial.println("");
   // check if the pushbutton is pressed.
   // if it is, the buttonState is HIGH:
-  
-  if (buttonState == LOW && weldComplete == 0 && voltageSteady == true) {
-  // complete a weld:
-  //  Serial.println("Do a weld now!");
-    weldschedule();
-  }
-    delay(10);        // delay in between reads for stability
+
+
+  // if (buttonState == LOW && weldComplete == 0 && voltageSteady == true)
+  // {
+  //   // complete a weld:
+  //   //  Serial.println("Do a weld now!");
+  //   weldschedule();
+  // }
+
+  delay(10); // delay in between reads for stability
 }
-
-

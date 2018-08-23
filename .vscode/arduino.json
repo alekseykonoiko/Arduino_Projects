@@ -1,0 +1,6 @@
+{
+    "board": "arduino:avr:pro",
+    "configuration": "cpu=16MHzatmega328",
+    "port": "COM4",
+    "sketch": "Micro_TIG_Welder\\Micro_Tig_Welder_V3\\Micro_Tig_Welder_V3.ino"
+}
